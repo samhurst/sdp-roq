@@ -195,6 +195,36 @@ roq-flow-id = 1*19(DIGIT) ; DIGIT defined in RFC 4566
 
 The RTP-over-QUIC flow identifier range is between 0 and 4611686018427387903 (2^62 - 1) (both included). Leading zeroes MUST NOT be used.
 
+## Enable Datagram Support {#datagrams}
+
+Section 3.2 of {{!I-D.ietf-avtcore-rtp-over-quic}} describes how to use the QUIC DATAGRAM extension ({{?RFC9221}}) with RTP-over-QUIC. The availability of QUIC DATAGRAMs requires a transport parameter to be exchanged during connection establishment. If an endpoint in an SDP exchange has an expectation that it may wish to use DATAGRAMs to payload RTP, it SHOULD signal this in the SDP document to ensure that the QUIC connection used supports the QUIC DATAGRAM extension.
+
+This section defines a new SDP session- and media-level attribute, "quic-datagrams". The attribute can be associated with an SDP media description ("m=" line) with any of the QUIC proto values defined in {{quic}}. In the case where the attribute is used in an SDP session description, all media descriptions in the document MUST use one of the QUIC proto values defined in {{quic}}.
+
+Where a new QUIC connection is to be established, the requirement for each endpoint to negotiate DATAGRAM support is dependent on the direction of the media streams described by the media descriptions in an SDP document. For example, if a media description is specified with the "sendrecv" attribute as defined in {{?RFC8866}}, or if two media descriptions with the same proto and port have a "sendonly" and a "recvonly" attribute respectibely, and the session or media descriptions include the "quic-datagrams" attribute then both endpoints in a QUIC connection must negotiate support for DATAGRAMs.
+
+Where an existing QUIC connection is to be reused, the sender of the SDP document should ensure that the connection has been established with DATAGRAM support. Receivers of an SDP document requesting DATAGRAMs on an established connection that does not support DATAGRAMs in the direction(s) required MUST consider the affected media descriptions invalid.
+
+The "quic-datagrams" attribute carries no value.
+
+The definition of the SDP "quic-datagrams" attribute is:
+
+Attribute name:  quic-datagrams
+
+Type of attribute:  session, media
+
+Mux category:  NORMAL
+
+Subject to charset:  No
+
+Purpose:  Indicate a request to negotiate support for the optional QUIC DATAGRAM extension.
+
+Contact name:  Spencer Dawkins
+
+Contact e-mail:  spencerdawkins.ietf@gmail.com
+
+Reference:  {{!I-D.dawkins-avtcore-sdp-roq}}
+
 ## A QUIC/RTP/AVPF Offer
 
 A complete example of an SDP offer using QUIC/RTP/AVPF might look like:
@@ -215,6 +245,7 @@ A complete example of an SDP offer using QUIC/RTP/AVPF might look like:
 |a=setup:passive|will wait for QUIC handshake (setup attribute from {{!RFC4145}})|
 |a=connection:new|don't want to reuse an existing QUIC connection (connection attribute from {{!RFC4145}})|
 |a=roq-flow-id:2|RTP-over-QUIC Flow Identifier shall be 2 for streams described by this SDP media description|
+|a=quic-datagrams|Negotiate support for the QUIC DATAGRAM extension|
 |c=IN IP6 2001:db8::2 |Same as {{!RFC8866}}|
 |a=rtpmap:99 h266/90000 |H.266 VVC codec {{?I-D.ietf-avtcore-rtp-vvc}}|
 
@@ -233,8 +264,6 @@ I'd like to minimize the number of protocol identifiers, based on identified nee
 This document currently includes secure profiles for middlebox support of legacy RTP endpoints.
 The thinking is that if a RoQ endpoint is communicating with a non-RoQ RTP endpoint using an RTP middlebox, the RoQ endpoint might reasonably use an insecure AVP profile when sending to the middlebox, but that endpoint doesn't have any way to control whether the RTP middlebox uses a secure profile when exchanging RTP with a non-RoQ endpoint.
 
-RoQ allows the encapsulation of RTP in both QUIC streams and in QUIC DATAGRAMs. We will include "stream" and "dgram" variants of any profiles we define.
-
 We've talked (a LOT) about including variants that failover to TCP/UDP/QUIC transport if UDP is blocked, so that an endpoint can proceed after ICE candidate probing, but can we assume that applications that can do other encapsulations will offer protocol identifiers for those encapsulations, in addition to "QUIC/RTP/AVPF" and related protocol identifiers?
 
 # Opening a QUIC connection for use with RoQ
@@ -252,6 +281,8 @@ Things to remember for this section
 * Check QUIC impacts on BUNDLE
 
 * Interaction with UDP-Connect to open pinholes in corporate proxies?
+
+* Check for the "quic-datagrams" attribute that defines whether the connection should negotiate support for the QUIC DATAGRAM extension, see {{datagrams}}.
 
 # Implications of using ICE with SDP from RFC 8842
 
@@ -296,6 +327,10 @@ TODO IANA Considerations from {{idents-atts}}.
 ### roq-flow-id
 
 This document defines a new SDP media-level attribute, "roq-flow-id". The details of the attribute are defined in {{rtp-quic-flow-id}}.
+
+### quic-datagrams
+
+This document defines a new SDP session- and media-level attribute, "quic-datagrams". The details of the attribute are defined in {{datagrams}}.
 
 --- back
 
